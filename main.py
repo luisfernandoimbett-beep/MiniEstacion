@@ -125,7 +125,8 @@ class MiniEstacion(QMainWindow):
 
 
 #"""
-# --- Simulación sin ESP32 ---
+# --- Simulación sin ESP32, quitar los numerales al momento de ejecutar con el montaje del esp 32
+#para que esta parte quede comentada y el programa funcione con los datos recibidos del esp32 ---
 def simular_datos(hmi):
     """
     Simula lecturas del ESP32 y pulsaciones del botón.
