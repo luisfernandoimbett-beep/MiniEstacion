@@ -11,8 +11,8 @@ from PySide6.QtCore import QThread, Signal, Qt
 class SerialWorker(QThread):
     data_received = Signal(str)
 
-    def __init__(self, port, baudrate=115200):
-        super().__init__()
+    def _init_(self, port, baudrate=115200):
+        super()._init_()
         self.port = port
         self.baudrate = baudrate
         self.running = False
@@ -43,8 +43,8 @@ class SerialWorker(QThread):
 
 # --- Interfaz principal ---
 class MiniEstacion(QMainWindow):
-    def __init__(self):
-        super().__init__()
+    def _init_(self):
+        super()._init_()
         self.setWindowTitle("🌦️ Mini Estación Meteorológica (Modo Simulación)")
         self.worker = None
         self.umbral = 50
@@ -92,11 +92,21 @@ class MiniEstacion(QMainWindow):
         self.worker.start()
         self.log.append(f"Conectado a {port}")
 
+    
     def desconectar(self):
         if self.worker:
-            self.worker.stop()
-        self.log.append("Desconectado")
-
+            try:
+                self.worker.stop()
+                if self.worker.serial_conn and self.worker.serial_conn.is_open:
+                    self.worker.serial_conn.close()
+                self.log.append("Desconectado correctamente.")
+            except Exception as e:
+                self.log.append(f"Error al desconectar: {e}")
+            finally:
+                self.worker = None
+        else:
+            self.log.append("No hay conexión activa.")
+            
     # --- Procesar datos recibidos ---
     def procesar_dato(self, data):
         self.log.append(f"< {data}")
@@ -108,10 +118,12 @@ class MiniEstacion(QMainWindow):
                 self.progress.setValue(valor)
 
                 # Comparar con el umbral
-                if valor > self.umbral:
+                if valor > self.umbral and not self.alerta_activa:
+                    self.alerta_activa = True
                     self.progress.setStyleSheet("QProgressBar::chunk {background-color: red;}")
                     QMessageBox.warning(self, "Alerta", "¡Humedad alta detectada!")
-                else:
+                elif valor <= self.umbral:
+                    self.alerta_activa = False
                     self.progress.setStyleSheet("")
             except:
                 pass
@@ -131,6 +143,7 @@ def simular_datos(hmi):
     """
     Simula lecturas del ESP32 y pulsaciones del botón.
     Genera valores de humedad y solicitudes aleatorias.
+
     """
     while True:
         valor = random.randint(20, 49)
@@ -141,12 +154,12 @@ def simular_datos(hmi):
 #"""
 
 # --- Programa principal ---
-if __name__ == "__main__":
+if _name_ == "_main_":
     app = QApplication(sys.argv)
     win = MiniEstacion()
     win.show()
 
     # Activar simulación (el hilo se ejecuta en segundo plano)
-    Thread(target=simular_datos, args=(win,), daemon=True).start()
+    #Thread(target=simular_datos, args=(win,), daemon=True).start()
 
     sys.exit(app.exec())
